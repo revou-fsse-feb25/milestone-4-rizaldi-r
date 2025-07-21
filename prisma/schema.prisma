@@ -6,10 +6,84 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REVERSED
+}
+
+// User table
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(50)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  email        String   @unique @db.VarChar(100)
+  firstName    String   @map("first_name") @db.VarChar(50)
+  lastName     String   @map("last_name") @db.VarChar(50)
+  userRole     UserRole @map("user_role")
+  refreshToken String?  @map("refresh_token")
+  lastLogin    DateTime @default(now()) @map("last_login")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  accounts Account[] //Relation to Account model
+}
+
+// Account table
+model Account {
+  id            Int           @id @default(autoincrement())
+  userId        Int           @map("user_id")
+  accountNumber String        @unique @map("account_number") @db.VarChar(20)
+  balance       Decimal       @default(0.00) @db.Decimal(18, 2)
+  currency      String        @db.VarChar(3)
+  accountStatus AccountStatus @default(ACTIVE) @map("account_status")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id])
+
+  from_transactions Transaction[] @relation("FromAccount")
+  to_transactions   Transaction[] @relation("ToAccount")
+}
+
+// Transaction table
+model Transaction {
+  id                Int               @id @default(autoincrement())
+  fromAccountId     Int?              @map("from_account_id")
+  toAccountId       Int?              @map("to_account_id")
+  amount            Decimal           @db.Decimal(18, 2)
+  transactionType   TransactionType   @map("transaction_type")
+  transactionStatus TransactionStatus @default(PENDING) @map("transaction_status")
+  transactionDate   DateTime          @default(now()) @map("transaction_date") @db.Timestamptz(6)
+  description       String?           @db.VarChar(255)
+
+  fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id])
 }
