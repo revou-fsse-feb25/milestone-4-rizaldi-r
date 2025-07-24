@@ -3,8 +3,8 @@ import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
+  // automatically look for and validate the JWT in the Authorization header
   canActivate(context: ExecutionContext) {
-    // Add custom logic here if needed
     return super.canActivate(context);
   }
 }
