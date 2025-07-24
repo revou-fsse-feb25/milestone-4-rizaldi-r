@@ -5,19 +5,22 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 import {
   comparePassword,
   hashPassword,
 } from 'src/_common/utils/password-hashing';
 import { LoginDto } from './dto/login.dto';
 import { PayloadDto } from 'src/_common/res/payload.dto';
+import { ConfigService } from '@nestjs/config';
 
+// TODO: create AuthRepository
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
     private prisma: PrismaService,
+    private configService: ConfigService,
   ) {}
 
   check() {
@@ -27,12 +30,16 @@ export class AuthService {
   private async generateToken(payload: PayloadDto) {
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_SECRET,
-        expiresIn: '15m',
+        // secret: process.env.JWT_SECRET,
+        secret: this.configService.get<string>('JWT_SECRET'),
+        // TODO: set to 15m
+        expiresIn: this.configService.get<string>('JWT_EXPIRATION', '1d'),
       }),
       this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_SECRET,
-        expiresIn: '7d',
+        // secret: process.env.JWT_SECRET,
+        secret: this.configService.get<string>('JWT_SECRET'),
+        // expiresIn: '7d',
+        expiresIn: this.configService.get<string>('JWT_EXPIRATION', '7d'),
       }),
     ]);
 
@@ -48,7 +55,7 @@ export class AuthService {
 
     // Generate JWT token
     const tokens = await this.generateToken({
-      userId: foundUser.id,
+      id: foundUser.id,
       email: foundUser.email,
       userRole: foundUser.userRole,
     });
@@ -71,6 +78,7 @@ export class AuthService {
     const hashedPassword = await hashPassword(password);
 
     // Create the user
+    // TODO: move this to user repo
     const user = await this.prisma.user.create({
       data: {
         username,
@@ -115,10 +123,13 @@ export class AuthService {
 
     // Generate JWT token
     const tokens = await this.generateToken({
-      userId: foundUser.id,
+      id: foundUser.id,
       email: foundUser.email,
       userRole: foundUser.userRole,
     });
+
+    // Update db
+    // TODO: move this to user repo
     await this.prisma.user.update({
       where: { id: foundUser.id },
       data: {
