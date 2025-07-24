@@ -1,9 +1,10 @@
+import { AccountStatus, Currency } from '@prisma/client';
 import {
-  IsArray,
-  IsBoolean,
-  IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
+  IsPositive,
   IsString,
 } from 'class-validator';
 
@@ -13,6 +14,15 @@ export class CreateAccountDto {
   accountName: string;
 
   @IsNotEmpty()
-  @IsString()
-  accountType: 'SAVINGS' | 'CHECKING' | 'CREDIT_CARD';
+  @IsNumber()
+  @IsPositive()
+  balance: number;
+
+  @IsNotEmpty()
+  @IsEnum(Currency)
+  currency: Currency;
+
+  @IsOptional()
+  @IsEnum(AccountStatus)
+  accountStatus: AccountStatus;
 }

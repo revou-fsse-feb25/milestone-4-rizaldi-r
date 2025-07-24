@@ -1,16 +1,9 @@
-import {
-  IsArray,
-  IsBoolean,
-  IsDateString,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-} from 'class-validator';
+import { IsNotEmpty, IsNumber } from 'class-validator';
 
-export class PatchAccountDto {
-  @IsNotEmpty()
-  @IsString()
-  accountName: string;
+export class UpdateAccountDto {
+  // @IsNotEmpty()
+  // @IsString()
+  // accountName: string;
 
   @IsNotEmpty()
   @IsNumber()

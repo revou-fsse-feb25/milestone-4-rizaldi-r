@@ -1,72 +1,94 @@
 import { Injectable } from '@nestjs/common';
-import {
-  AccountRepositoryItf,
-  CreateAccountParam,
-  DeleteAccountParam,
-  GetAccountParam,
-  PatchAccountParam,
-} from './account.repository.interface';
-import { Account } from './entities/account.entity';
 import { AccountNotFoundRepositoryException } from './exceptions/account-not-found.exception.repository';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Account, AccountStatus } from '@prisma/client';
+import {
+  ItfAccountRepository,
+  UserInputItf,
+} from './types/accounts.repository.interface';
 
 @Injectable()
-export class AccountRepository implements AccountRepositoryItf {
-  private readonly accounts: Account[] = [
-    {
-      userId: 'user123',
-      accountName: 'Primary Savings',
-      balance: 1000000,
-      accountType: 'SAVINGS',
-    },
-    {
-      userId: 'user124',
-      accountName: 'Education Fund',
-      balance: 5000000,
-      accountType: 'SAVINGS',
-    },
-  ];
+export class AccountRepository implements ItfAccountRepository {
+  constructor(private prisma: PrismaService) {}
 
-  getAll(): Account[] {
-    return this.accounts;
+  async findAll(): Promise<Account[]> {
+    return await this.prisma.account.findMany();
   }
 
-  getAccount(param: GetAccountParam): Account {
-    const account = this.accounts.find((acc) => acc.userId === param.userId);
-    if (!account) throw new AccountNotFoundRepositoryException();
-    return account;
+  async findAllByUserId(userId: number): Promise<Account[]> {
+    return await this.prisma.account.findMany({
+      where: { userId },
+    });
   }
 
-  createAccount(param: CreateAccountParam): Account {
-    const newAccount: Account = {
-      userId: (this.accounts.length + 1).toString(),
-      accountName: param.accountName,
-      balance: 0,
-      accountType: param.accountType,
-    };
-
-    this.accounts.push(newAccount);
-    return newAccount;
+  async findById(id: number): Promise<Account> {
+    const foundAccount = await this.prisma.account.findUnique({
+      where: { id },
+    });
+    if (!foundAccount) throw new AccountNotFoundRepositoryException();
+    return foundAccount;
   }
 
-  patchAccount(param: PatchAccountParam): Account {
-    const account = this.accounts.find((acc) => acc.userId === param.userId);
-    if (!account) throw new AccountNotFoundRepositoryException();
-
-    account.accountName = param.accountName;
-    account.balance = param.balance;
-
-    return account;
+  async findByAccountNumber(accountNumber: string) {
+    const foundAccount = await this.prisma.account.findUnique({
+      where: { accountNumber },
+    });
+    // ISSUE: cant throw error bc it used to check if account number is uique by number generator
+    // if (!foundAccount) throw new AccountNotFoundRepositoryException();
+    return foundAccount;
   }
 
-  deleteAccount(param: DeleteAccountParam): Account {
-    const accountIndex = this.accounts.findIndex(
-      (acc) => acc.userId === param.userId,
-    );
-    if (accountIndex === -1) throw new AccountNotFoundRepositoryException();
+  async findAllWithTransactionsByUserId(userId: number) {
+    return this.prisma.account.findMany({
+      where: { userId },
+      include: {
+        from_transactions: true,
+        to_transactions: true,
+      },
+    });
+  }
 
-    const oldAcc = this.accounts[accountIndex];
-    this.accounts.splice(accountIndex, 1);
+  // TODO: add exception error
+  async findAccountWithTransactions(id: number) {
+    return this.prisma.account.findUnique({
+      where: { id },
+      include: {
+        from_transactions: true,
+        to_transactions: true,
+      },
+    });
+  }
 
-    return oldAcc;
+  async create(userId: number, userInput: UserInputItf): Promise<Account> {
+    return await this.prisma.account.create({
+      data: {
+        ...userInput,
+        user: {
+          connect: { id: userId },
+        },
+      },
+    });
+  }
+
+  async updateBalance(id: number, newBalance: number) {
+    return this.prisma.account.update({
+      where: { id },
+      data: { balance: { set: newBalance } },
+    });
+  }
+
+  async updateStatus(id: number, status: AccountStatus) {
+    return await this.prisma.account.update({
+      where: { id },
+      data: { accountStatus: status },
+    });
+  }
+
+  async delete(id: number): Promise<Account> {
+    const oldAccount = await this.prisma.account.delete({
+      where: { id },
+    });
+    if (!oldAccount) throw new AccountNotFoundRepositoryException();
+    return oldAccount;
   }
 }

@@ -6,53 +6,72 @@ import {
   Param,
   Delete,
   Patch,
-  UseInterceptors,
+  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
-import { Account } from './entities/account.entity';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/role.guard';
+import { Account, User } from '@prisma/client';
+import { CurrentUser } from 'src/_common/decorators/current-user.decorator';
 import { CreateAccountDto } from './dto/req/create-account.dto';
-import { PatchAccountDto } from './dto/req/update-account.dto';
-import { BodyTransformerInterceptor } from 'src/_common/interceptors/body-transformer.interceptor';
+import { Roles } from 'src/_common/decorators/roles.decorator';
+import { UpdateAccountDto } from './dto/req/update-account.dto';
 
-@UseInterceptors(BodyTransformerInterceptor)
+@UseGuards(JwtAuthGuard, RolesGuard)
+// TODO: edit the respond dto
+// @UseInterceptors(BodyTransformerInterceptor)
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
 
-  @Get()
-  findAll(): Account[] {
-    const accs = this.accountsService.findAll();
-    return accs;
+  // admin only
+  @Roles('ADMIN')
+  @Get('/all')
+  async findAll(): Promise<Account[]> {
+    return this.accountsService.findAll();
   }
 
+  // TODO: find by account name
+
+  @Get()
+  async findAllByUserId(@CurrentUser() user: User): Promise<Account[]> {
+    return this.accountsService.findAllByUserId(user.id);
+  }
+
+  @Get('with-transactions')
+  async findAllWithTransactionsByUserId(@CurrentUser() user: User) {
+    return this.accountsService.findAllWithTransactionsByUserId(user.id);
+  }
+
+  // TODO: check user id
   @Get(':id')
-  findOne(@Param('id') id: string): Account {
-    const account = this.accountsService.findOne({ userId: id });
-    return account;
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<Account> {
+    return this.accountsService.findById(id);
   }
 
   @Post()
-  createAccount(@Body() body: CreateAccountDto) {
-    const account = this.accountsService.createAccount({
-      accountName: body.accountName,
-      accountType: body.accountType,
-    });
-    return account;
+  async create(
+    @CurrentUser() user: User,
+    @Body() createAccountDto: CreateAccountDto,
+  ) {
+    return this.accountsService.create(user.id, createAccountDto);
   }
 
-  @Patch('/:id')
-  update(@Param('id') id: string, @Body() body: PatchAccountDto) {
-    const acc = this.accountsService.patchAccount({
-      userId: id,
-      accountName: body.accountName,
-      balance: body.balance,
-    });
-    return acc;
+  // TODO: update some field
+
+  // TODO: check user id, check is admin too
+  @Patch(':id')
+  async updateBalance(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() newBalance: UpdateAccountDto,
+  ) {
+    return this.accountsService.updateBalance(id, newBalance.balance);
   }
 
+  // TODO: check user id,
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    const acc = this.accountsService.deleteAccount({ userId: id });
-    return acc;
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<Account> {
+    return this.accountsService.delete(id);
   }
 }
