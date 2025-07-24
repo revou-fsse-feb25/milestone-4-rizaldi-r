@@ -1,22 +1,34 @@
-import { Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
+import { CurrentUser } from 'src/_common/decorators/current-user.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { User } from '@prisma/client';
+import { Roles } from 'src/_common/decorators/roles.decorator';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { RolesGuard } from 'src/auth/guards/role.guard';
 
 @Controller('user')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('/profile/:id')
-  findById(@Param('id') id: number) {
-    return this.userService.findById(id);
+  // Admin only
+  @Roles('ADMIN')
+  @Get('/profiles')
+  async findAll() {
+    return this.userService.findAll();
+  }
+
+  @Get('/profile')
+  async getProfile(@CurrentUser() user: User) {
+    return this.userService.findById(user.id);
   }
 
   @Patch('/profile')
-  findByEmail(@Query('email') email: string) {
-    return this.userService.findByEmail(email);
+  async update(
+    @CurrentUser() user: User,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.userService.update(user.id, updateUserDto);
   }
-
-  // @Patch('/profile')
-  // update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-  //   return this.userService.update(+id, updateUserDto);
-  // }
 }
