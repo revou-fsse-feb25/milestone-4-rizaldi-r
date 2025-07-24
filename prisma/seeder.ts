@@ -10,13 +10,14 @@ import { hashPassword } from '../src/_common/utils/password-hashing';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Clear existing data
+async function clearData() {
   await prisma.transaction.deleteMany({});
   await prisma.account.deleteMany({});
   await prisma.user.deleteMany({});
   console.log('Cleared existing data.');
+}
 
+async function insertData() {
   console.log('Start seeding...');
 
   // --- Create Users ---
@@ -56,6 +57,7 @@ async function main() {
     update: {},
     create: {
       userId: user1.id,
+      accountName: 'john-account',
       accountNumber: 'ACC0012345678',
       balance: new Prisma.Decimal(1500.0),
       currency: 'USD',
@@ -71,6 +73,7 @@ async function main() {
     update: {},
     create: {
       userId: user2.id,
+      accountName: 'jane-account',
       accountNumber: 'ACC0098765432',
       balance: new Prisma.Decimal(500.0),
       currency: 'USD',
@@ -134,6 +137,12 @@ async function main() {
   );
 
   console.log('Seeding finished.');
+}
+
+async function main() {
+  await clearData();
+
+  await insertData();
 }
 
 main()
