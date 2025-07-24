@@ -26,6 +26,29 @@ enum AccountStatus {
   SUSPENDED
 }
 
+enum Currency {
+  USD
+  EUR
+  GBP
+  JPY
+  CAD
+  AUD
+  CHF
+  CNY
+  INR
+  BRL
+  RUB
+  ZAR
+  IDR
+  SGD
+  NZD
+  MXN
+  KRW
+  SEK
+  NOK
+  DKK
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -50,6 +73,7 @@ model User {
   userRole     UserRole @map("user_role")
   refreshToken String?  @map("refresh_token")
   lastLogin    DateTime @default(now()) @map("last_login")
+  
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -60,14 +84,16 @@ model User {
 model Account {
   id            Int           @id @default(autoincrement())
   userId        Int           @map("user_id")
+  accountName   String        @unique @map("account_name") @db.VarChar(50)
   accountNumber String        @unique @map("account_number") @db.VarChar(20)
   balance       Decimal       @default(0.00) @db.Decimal(18, 2)
-  currency      String        @db.VarChar(3)
+  currency      Currency      @default(USD)
   accountStatus AccountStatus @default(ACTIVE) @map("account_status")
+
   createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   from_transactions Transaction[] @relation("FromAccount")
   to_transactions   Transaction[] @relation("ToAccount")
@@ -84,6 +110,9 @@ model Transaction {
   transactionDate   DateTime          @default(now()) @map("transaction_date") @db.Timestamptz(6)
   description       String?           @db.VarChar(255)
 
-  fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id])
-  toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id])
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  fromAccount Account? @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccount   Account? @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
 }
