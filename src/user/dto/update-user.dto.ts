@@ -1,9 +1,23 @@
-// TODO: Implement UpdateProfileDto with class-validator decorators
-// Should validate name and/or password (both optional)
+import { IsString, IsEmail, IsOptional, IsNotEmpty } from 'class-validator';
 
 export class UpdateUserDto {
-  // Add properties and validation decorators here
-  name?: string;
+  @IsOptional()
+  @IsString()
+  username?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  firstName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  lastName: string;
+
+  @IsOptional()
+  @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsString()
   password?: string;
 }
