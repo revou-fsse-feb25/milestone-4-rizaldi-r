@@ -1,8 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserRepositoryItf } from './user.repository.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
-import { updateParam } from './types/user.repository.interface';
+import {
+  createParam,
+  updateParam,
+  UserRepositoryItf,
+} from './types/user.repository.interface';
 
 @Injectable()
 export class UserRepository implements UserRepositoryItf {
@@ -20,24 +23,27 @@ export class UserRepository implements UserRepositoryItf {
     return foundUser;
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByEmail(email: string): Promise<User | null> {
     const foundUser = await this.prisma.user.findUnique({
       where: { email },
     });
-    if (!foundUser)
-      throw new NotFoundException(`User with Email ${email} not found`);
+    // if (!foundUser)
+    //   throw new NotFoundException(`User with Email ${email} not found`);
     return foundUser;
+  }
+
+  // TODO: update interface
+  async create(createData: createParam): Promise<User> {
+    return await this.prisma.user.create({
+      data: createData,
+    });
   }
 
   async update(id: number, userInput: updateParam): Promise<User> {
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
-        username: userInput.username,
-        email: userInput.email,
-        passwordHash: userInput.password,
-        firstName: userInput.firstName,
-        lastName: userInput.lastName,
+        ...userInput,
       },
     });
     return updatedUser;
