@@ -1,4 +1,10 @@
-import { Account, AccountStatus, Currency, Transaction } from '@prisma/client';
+import {
+  Account,
+  AccountStatus,
+  Currency,
+  Prisma,
+  Transaction,
+} from '@prisma/client';
 
 export interface AccountServiceItf {
   findAll(): Promise<Account[]>;
@@ -11,7 +17,10 @@ export interface AccountServiceItf {
     id: number,
   ): Promise<typeAccountWithTransaction | null>;
   create(userId: number, userInput: UserInputItf): Promise<Account>;
-  updateBalance(accountId: number, newBalance: number): Promise<Account>;
+  updateBalance(
+    accountId: number,
+    newBalance: Prisma.Decimal,
+  ): Promise<Account>;
   // updateStatus(accountId: number, status: typeStatus): Promise<Account>;
   delete(accountId: number): Promise<Account>;
 }

@@ -1,8 +1,17 @@
-import { Account, AccountStatus, Currency, Transaction } from '@prisma/client';
+import {
+  Account,
+  AccountStatus,
+  Currency,
+  Prisma,
+  Transaction,
+} from '@prisma/client';
 
-export interface ItfAccountRepository {
+export interface ItfAccountsRepository {
   findAll(): Promise<Account[]>;
-  findAllByUserId(userId: number): Promise<Account[]>;
+  // findAllByUserId(
+  //   userId: number,
+  //   selectedField?: Partial<Record<keyof Account, boolean>>,
+  // ): Promise<Account[]>;
   findById(id: number): Promise<Account>;
   findAllWithTransactionsByUserId(
     userId: number,
@@ -11,7 +20,7 @@ export interface ItfAccountRepository {
     id: number,
   ): Promise<typeAccountWithTransaction | null>;
   create(userId: number, userInput: UserInputItf): Promise<Account>;
-  updateBalance(id: number, newBalance: number): Promise<Account>;
+  updateBalance(id: number, newBalance: Prisma.Decimal): Promise<Account>;
   updateStatus(id: number, status: AccountStatus): Promise<Account>;
   delete(id: number): Promise<Account>;
 }

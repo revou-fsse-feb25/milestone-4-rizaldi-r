@@ -1,23 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { AccountNotFoundRepositoryException } from './exceptions/account-not-found.exception.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Account, AccountStatus } from '@prisma/client';
+import { Account, AccountStatus, Prisma } from '@prisma/client';
 import {
-  ItfAccountRepository,
+  ItfAccountsRepository,
   UserInputItf,
 } from './types/accounts.repository.interface';
 
 @Injectable()
-export class AccountRepository implements ItfAccountRepository {
+export class AccountsRepository implements ItfAccountsRepository {
   constructor(private prisma: PrismaService) {}
 
   async findAll(): Promise<Account[]> {
     return await this.prisma.account.findMany();
   }
 
-  async findAllByUserId(userId: number): Promise<Account[]> {
+  async findAllByUserId(
+    userId: number,
+    // selectedField?: Partial<Record<keyof Account, boolean>>,
+  ): Promise<Account[]> {
     return await this.prisma.account.findMany({
       where: { userId },
+      // select: { id: true, userId: true },
     });
   }
 
@@ -70,10 +74,10 @@ export class AccountRepository implements ItfAccountRepository {
     });
   }
 
-  async updateBalance(id: number, newBalance: number) {
+  async updateBalance(id: number, newBalance: Prisma.Decimal) {
     return this.prisma.account.update({
       where: { id },
-      data: { balance: { set: newBalance } },
+      data: { balance: newBalance },
     });
   }
 

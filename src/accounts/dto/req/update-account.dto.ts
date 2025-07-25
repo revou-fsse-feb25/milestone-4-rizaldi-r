@@ -1,11 +1,8 @@
+import { Prisma } from '@prisma/client';
 import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class UpdateAccountDto {
-  // @IsNotEmpty()
-  // @IsString()
-  // accountName: string;
-
   @IsNotEmpty()
   @IsNumber()
-  balance: number;
+  balance: Prisma.Decimal;
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { AccountRepository } from './accounts.repository';
-import { Account, AccountStatus } from '@prisma/client';
+import { AccountsRepository } from './accounts.repository';
+import { Account, AccountStatus, Prisma } from '@prisma/client';
 import {
   AccountServiceItf,
   UserInputItf,
@@ -8,7 +8,7 @@ import {
 
 @Injectable()
 export class AccountsService implements AccountServiceItf {
-  constructor(private accountRepository: AccountRepository) {}
+  constructor(private accountRepository: AccountsRepository) {}
 
   private async generateAccountNumber(): Promise<string> {
     let accountNumber: string = '';
@@ -62,7 +62,7 @@ export class AccountsService implements AccountServiceItf {
     return this.accountRepository.create(userId, finalInput);
   }
 
-  async updateBalance(id: number, newBalance: number) {
+  async updateBalance(id: number, newBalance: Prisma.Decimal) {
     return this.accountRepository.updateBalance(id, newBalance);
   }
 
