@@ -36,7 +36,6 @@ export class RegisterDto {
   @MaxLength(50, { message: 'Last name cannot be longer than 50 characters' })
   lastName: string;
 
-  @IsEnum(UserRole, { message: 'Invalid user type' })
-  @IsNotEmpty({ message: 'User type is required' })
-  userType: UserRole;
+  @IsEnum(UserRole, { message: 'Invalid user role' })
+  userRole?: UserRole;
 }
