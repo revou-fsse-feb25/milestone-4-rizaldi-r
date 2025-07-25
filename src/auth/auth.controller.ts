@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RolesGuard } from './guards/role.guard';
 import { Roles } from 'src/_common/decorators/roles.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from 'src/_common/decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -17,9 +18,9 @@ export class AuthController {
     return this.authService.check();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('refresh')
-  // TODO: get current user
-  refresh(id: number) {
+  async refresh(@CurrentUser() { id }: { id: number }) {
     return this.authService.refresh(id);
   }
 
@@ -29,7 +30,7 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 }

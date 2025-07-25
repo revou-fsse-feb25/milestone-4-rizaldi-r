@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
 import {
   comparePassword,
   hashPassword,
@@ -13,14 +12,14 @@ import {
 import { LoginDto } from './dto/login.dto';
 import { PayloadDto } from 'src/_common/res/payload.dto';
 import { ConfigService } from '@nestjs/config';
+import { UserRepository } from 'src/user/user.repository';
 
-// TODO: create AuthRepository
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    private prisma: PrismaService,
     private configService: ConfigService,
+    private userRepository: UserRepository,
   ) {}
 
   check() {
@@ -44,9 +43,7 @@ export class AuthService {
 
   async refresh(userId: number) {
     // find user from db
-    const foundUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const foundUser = await this.userRepository.findById(userId);
     if (!foundUser) throw new UnauthorizedException('User not found');
 
     // Generate JWT token
@@ -59,31 +56,35 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const { username, email, password, firstName, lastName } = registerDto;
-
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+    const { password, ...otherData } = registerDto;
 
     // Check if user already exists
-    if (existingUser) {
+    const foundUser = await this.userRepository.findByEmail(otherData.email);
+    if (foundUser) {
       throw new ConflictException('Email already registered');
     }
 
     // Hash the password
     const hashedPassword = await hashPassword(password);
 
-    // Create the user
-    // TODO: move this to user repo
-    const user = await this.prisma.user.create({
-      data: {
-        username,
-        email,
-        passwordHash: hashedPassword,
-        firstName,
-        lastName,
-        userRole: 'CUSTOMER',
-      },
+    // Create the user in db
+    const user = await this.userRepository.create({
+      ...otherData,
+      passwordHash: hashedPassword,
+      userRole: 'CUSTOMER',
+    });
+
+    // generate token
+    const tokens = await this.generateToken({
+      id: user.id,
+      email: user.email,
+      userRole: user.userRole,
+    });
+
+    // Update refresh token in db
+    await this.userRepository.update(user.id, {
+      lastLogin: new Date(),
+      refreshToken: tokens.refresh_token,
     });
 
     // Remove password from response
@@ -94,6 +95,7 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
+        tokens,
       },
     };
   }
@@ -102,10 +104,9 @@ export class AuthService {
     loginDto: LoginDto,
   ): Promise<{ access_token: string; refresh_token: string }> {
     const { email, password } = loginDto;
-    // const payload = { email, password };
 
     // Find the user
-    const foundUser = await this.prisma.user.findUnique({ where: { email } });
+    const foundUser = await this.userRepository.findByEmail(email);
     if (!foundUser) throw new UnauthorizedException('Email not registered');
 
     // Verify password
@@ -125,13 +126,9 @@ export class AuthService {
     });
 
     // Update db
-    // TODO: move this to user repo
-    await this.prisma.user.update({
-      where: { id: foundUser.id },
-      data: {
-        lastLogin: new Date(),
-        refreshToken: tokens.refresh_token,
-      },
+    await this.userRepository.update(foundUser.id, {
+      lastLogin: new Date(),
+      refreshToken: tokens.refresh_token,
     });
     return tokens;
   }
