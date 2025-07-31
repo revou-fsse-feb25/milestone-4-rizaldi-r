@@ -8,6 +8,8 @@ import {
   Patch,
   UseGuards,
   ParseIntPipe,
+  Query,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -16,11 +18,18 @@ import { Account, User } from '@prisma/client';
 import { CurrentUser } from 'src/_common/decorators/current-user.decorator';
 import { CreateAccountDto } from './dto/req/create-account.dto';
 import { Roles } from 'src/_common/decorators/roles.decorator';
-import { UpdateAccountDto } from './dto/req/update-account.dto';
+import {
+  UpdateAccountBalanceDto,
+  UpdateAccountDto,
+} from './dto/req/update-account.dto';
+import { ResourceOwnershipGuard } from 'src/_common/guards/resource-owner.guard';
+import { AllowAdminBypassOwnership } from 'src/_common/decorators/resource-owner/allow-admin-bypass-owner.decorator';
+import { OwnershipService } from 'src/_common/decorators/resource-owner/owner-service.decorator';
+import { OwnershipIdSource } from 'src/_common/decorators/resource-owner/ownership-id-source.decorator';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-// TODO: edit the respond dto
-// @UseInterceptors(BodyTransformerInterceptor)
+@UseGuards(JwtAuthGuard, RolesGuard, ResourceOwnershipGuard)
+@OwnershipService(AccountsService)
+@AllowAdminBypassOwnership()
 @Controller('accounts')
 export class AccountsController {
   constructor(private readonly accountsService: AccountsService) {}
@@ -32,19 +41,20 @@ export class AccountsController {
     return this.accountsService.findAll();
   }
 
-  // TODO: find by account name
-
   @Get()
-  async findAllByUserId(@CurrentUser() user: User): Promise<Account[]> {
-    return this.accountsService.findAllByUserId(user.id);
+  async findAllByUserId(
+    @CurrentUser() user: User,
+    @Query('transaction', new ParseBoolPipe({ optional: true }))
+    transaction?: boolean,
+  ): Promise<Account | Account[]> {
+    if (transaction) {
+      return this.accountsService.findAllWithTransactionsByUserId(user.id);
+    } else {
+      return this.accountsService.findAllByUserId(user.id);
+    }
   }
 
-  @Get('with-transactions')
-  async findAllWithTransactionsByUserId(@CurrentUser() user: User) {
-    return this.accountsService.findAllWithTransactionsByUserId(user.id);
-  }
-
-  // TODO: check user id
+  @OwnershipIdSource('param')
   @Get(':id')
   async findById(@Param('id', ParseIntPipe) id: number): Promise<Account> {
     return this.accountsService.findById(id);
@@ -58,18 +68,28 @@ export class AccountsController {
     return this.accountsService.create(user.id, createAccountDto);
   }
 
-  // TODO: update some field
-
-  // TODO: check user id, check is admin too
+  @OwnershipIdSource('param')
   @Patch(':id')
-  async updateBalance(
+  async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() newBalance: UpdateAccountDto,
+    @Body() updateAccountDto: UpdateAccountDto,
   ) {
-    return this.accountsService.updateBalance(id, newBalance.balance);
+    return this.accountsService.update(id, updateAccountDto);
   }
 
-  // TODO: check user id,
+  @Roles('ADMIN')
+  @Patch('balance/:id')
+  async updateBalance(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateAccountBalanceDto: UpdateAccountBalanceDto,
+  ) {
+    return this.accountsService.updateBalance(
+      id,
+      updateAccountBalanceDto.balance,
+    );
+  }
+
+  @OwnershipIdSource('param')
   @Delete(':id')
   async delete(@Param('id', ParseIntPipe) id: number): Promise<Account> {
     return this.accountsService.delete(id);
