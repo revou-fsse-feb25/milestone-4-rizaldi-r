@@ -60,12 +60,17 @@ export class TransactionsRepository {
     });
   }
 
-  async findAllByUserId(userId: number) {
+  async findAllByUserId(userId: number, filter?: { accountId?: number }) {
     // get all accounts for the user
     const accounts = await this.accountRepository.findAllByUserId(userId);
-    const accountIds = accounts.map((account) => account.id);
+    let accountIds = accounts.map((account) => account.id);
 
-    // Then get all transactions for those accounts
+    // filter account
+    if (filter && filter.accountId) {
+      accountIds = accountIds.filter((id) => id === filter.accountId);
+    }
+
+    // get all transactions for those accounts
     return this.prisma.transaction.findMany({
       where: {
         OR: [
