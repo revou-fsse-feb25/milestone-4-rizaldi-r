@@ -1,38 +1,133 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { Account, Prisma, Transaction, TransactionType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AccountsRepository } from 'src/accounts/accounts.repository';
 import { TransactionsRepository } from './transactions.repository';
+import { AccountsService } from 'src/accounts/accounts.service';
+import { ResourceNotFoundException } from 'src/_common/exceptions/custom-not-found.exception';
+import { UserService } from 'src/user/user.service';
+import {
+  CreateParamItf,
+  TransactionsServiceItf,
+} from './types/transactions.service.interface';
 
 @Injectable()
-export class TransactionsService {
+export class TransactionsService implements TransactionsServiceItf {
   constructor(
     private prisma: PrismaService,
+    private userService: UserService,
+    private accountService: AccountsService,
     private accountRepository: AccountsRepository,
     private transactionsRepository: TransactionsRepository,
   ) {}
 
-  // TODO: add transfer between account
+  private async _handleDeposit(
+    account: Account,
+    amount: Prisma.Decimal,
+    prismaTransaction: Prisma.TransactionClient,
+  ): Promise<{
+    newBalance: Prisma.Decimal;
+    accountIdRelations: { toAccountId: number };
+  }> {
+    const newBalance = new Prisma.Decimal(account.balance).plus(amount);
+    await this.accountRepository.updateBalance(
+      account.id,
+      newBalance,
+      prismaTransaction,
+    );
+    return {
+      newBalance,
+      accountIdRelations: { toAccountId: account.id },
+    };
+  }
 
-  async create(createData: {
-    accountId: number;
-    toAccountId?: number;
-    amount: Prisma.Decimal;
-    type: TransactionType;
-    description?: string;
-  }): Promise<Transaction> {
+  private async _handleWithdrawal(
+    account: Account,
+    amount: Prisma.Decimal,
+    prismaTransaction: Prisma.TransactionClient,
+  ): Promise<{
+    newBalance: Prisma.Decimal;
+    accountIdRelations: { fromAccountId: number };
+  }> {
+    if (new Prisma.Decimal(account.balance).lessThan(amount)) {
+      throw new UnprocessableEntityException(
+        'Insufficient funds for withdrawal',
+      );
+    }
+    const newBalance = new Prisma.Decimal(account.balance).minus(amount);
+    await this.accountRepository.updateBalance(
+      account.id,
+      newBalance,
+      prismaTransaction,
+    );
+    return {
+      newBalance,
+      accountIdRelations: { fromAccountId: account.id },
+    };
+  }
+
+  private async _handleTransfer(
+    fromAccount: Account,
+    toAccountId: number,
+    amount: Prisma.Decimal,
+    prismaTransaction: Prisma.TransactionClient,
+  ): Promise<{
+    newBalance: Prisma.Decimal;
+    accountIdRelations: { fromAccountId: number; toAccountId: number };
+  }> {
+    if (fromAccount.id === toAccountId) {
+      throw new BadRequestException('Cannot transfer to the same account');
+    }
+
+    // Find recipient account
+    const toAccount = await this.accountRepository.findById(toAccountId);
+    if (!toAccount) {
+      throw new NotFoundException('Recipient account not found');
+    }
+
+    // Check sender's balance
+    if (new Prisma.Decimal(fromAccount.balance).lessThan(amount)) {
+      throw new UnprocessableEntityException('Insufficient funds for transfer');
+    }
+
+    const newFromBalance = new Prisma.Decimal(fromAccount.balance).minus(
+      amount,
+    );
+    const newToBalance = new Prisma.Decimal(toAccount.balance).plus(amount);
+
+    // Update both accounts' balances within the transaction
+    await this.accountRepository.updateBalance(
+      fromAccount.id,
+      newFromBalance,
+      prismaTransaction,
+    );
+    await this.accountRepository.updateBalance(
+      toAccount.id,
+      newToBalance,
+      prismaTransaction,
+    );
+
+    return {
+      newBalance: newFromBalance,
+      accountIdRelations: {
+        fromAccountId: fromAccount.id,
+        toAccountId,
+      },
+    };
+  }
+
+  async create(createData: CreateParamItf): Promise<Transaction> {
     const { accountId, amount, type, description, toAccountId } = createData;
 
-    return this.prisma.$transaction(async () => {
-      // find sender account
-      const fromAccount: Account =
-        await this.accountRepository.findById(accountId);
-      if (!fromAccount) throw new Error('Account not found');
+    return this.prisma.$transaction(async (prismaTransaction) => {
+      const account = await this.accountService.findById(accountId);
 
-      // setup amount and balance variable
       const transactionAmount = new Prisma.Decimal(amount);
-      let newBalance = new Prisma.Decimal(fromAccount.balance);
-
       let accountIdRelations: {
         fromAccountId?: number;
         toAccountId?: number;
@@ -40,68 +135,40 @@ export class TransactionsService {
 
       switch (type) {
         case TransactionType.DEPOSIT:
-          // calculate balance and set account id
-          newBalance = newBalance.plus(transactionAmount);
-          accountIdRelations = { toAccountId: accountId };
-
-          // update account balance
-          await this.accountRepository.updateBalance(accountId, newBalance);
+          ({ accountIdRelations } = await this._handleDeposit(
+            account,
+            transactionAmount,
+            prismaTransaction,
+          ));
           break;
 
         case TransactionType.WITHDRAWAL:
-          if (newBalance.lessThan(transactionAmount)) {
-            throw new Error('Insufficient funds');
-          }
-
-          // calculate balance and set account id
-          newBalance = newBalance.minus(transactionAmount);
-          accountIdRelations = { fromAccountId: accountId };
-
-          // update account balance
-          await this.accountRepository.updateBalance(accountId, newBalance);
-          break;
-
-        case TransactionType.TRANSFER: {
-          // check acccount id destination
-          if (!toAccountId) {
-            throw new Error('toAccountId is required for transfer');
-          }
-          if (accountId === toAccountId) {
-            throw new Error('Cannot transfer to the same account');
-          }
-
-          // find account destination
-          const toAccount = await this.accountRepository.findById(toAccountId);
-          if (!toAccount) throw new Error('Recipient account not found');
-
-          // check balance
-          if (newBalance.lessThan(transactionAmount)) {
-            throw new Error('Insufficient funds for transfer');
-          }
-          console.log('🚀 ~ toAccount:', toAccount.balance);
-
-          // calculate balance and set account id
-          newBalance = newBalance.minus(transactionAmount);
-          const newToBalance = new Prisma.Decimal(toAccount.balance).plus(
+          ({ accountIdRelations } = await this._handleWithdrawal(
+            account,
             transactionAmount,
-          );
-          accountIdRelations = {
-            fromAccountId: accountId,
-            toAccountId,
-          };
-
-          // update accounts balance in db
-          await this.accountRepository.updateBalance(accountId, newBalance);
-          await this.accountRepository.updateBalance(toAccountId, newToBalance);
-
+            prismaTransaction,
+          ));
           break;
-        }
+
+        case TransactionType.TRANSFER:
+          if (!toAccountId) {
+            throw new BadRequestException(
+              'Recipient account ID (toAccountId) is required for transfer',
+            );
+          }
+          ({ accountIdRelations } = await this._handleTransfer(
+            account,
+            toAccountId,
+            transactionAmount,
+            prismaTransaction,
+          ));
+          break;
 
         default:
-          throw new Error('Invalid transaction type');
+          throw new BadRequestException('Invalid transaction type');
       }
 
-      // create transaction in db
+      // Create transaction record in the database
       const createdTransaction = await this.transactionsRepository.create({
         amount,
         description,
@@ -117,18 +184,22 @@ export class TransactionsService {
     return await this.transactionsRepository.findAll();
   }
 
-  // Get a transaction by ID
-  async findById(id: number) {
-    return await this.transactionsRepository.findById(id);
+  async findById(id: number): Promise<Transaction> {
+    const transaction = await this.transactionsRepository.findById(id);
+    if (!transaction)
+      throw new ResourceNotFoundException('Transaction', 'id', id);
+    return transaction;
   }
 
-  // Get all transactions for an account
   async findAllByAccountId(accountId: number) {
+    await this.accountService.findById(accountId);
     return await this.transactionsRepository.findAllByAccountId(accountId);
   }
 
-  // Get all transactions for a user across all their accounts
-  async findAllByUserId(userId: number) {
-    return await this.transactionsRepository.findAllByUserId(userId);
+  async findAllByUserId(userId: number, accountId?: number) {
+    await this.userService.findById(userId);
+    return await this.transactionsRepository.findAllByUserId(userId, {
+      accountId,
+    });
   }
 }
