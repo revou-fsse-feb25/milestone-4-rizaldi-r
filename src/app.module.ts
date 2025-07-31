@@ -13,6 +13,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     AuthModule,
     UserModule,
