@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { RequestItf } from '../types/request.type';
 
 /**
  * Custom decorator to extract the current user from the request object.
@@ -14,7 +15,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  * ```
  */
 export const currentUserFactory = (data: unknown, ctx: ExecutionContext) => {
-  const request = ctx.switchToHttp().getRequest<Request & { user?: object }>();
+  const request = ctx.switchToHttp().getRequest<RequestItf>();
   return request.user;
 };
 
