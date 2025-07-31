@@ -1,20 +1,29 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CurrentUser } from 'src/_common/decorators/current-user.decorator';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User } from '@prisma/client';
-import { Roles } from 'src/_common/decorators/roles.decorator';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { RolesGuard } from 'src/auth/guards/role.guard';
+import { UpdateUserDto } from './dto/req/update-user.dto';
+import { CurrentUser } from '../_common/decorators/current-user.decorator';
+import { RolesGuard } from '../auth/guards/role.guard';
+import { BodyTransformerInterceptor } from '../_common/interceptors/body-transformer.interceptor';
+import { Roles } from '../_common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('user')
+@Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(BodyTransformerInterceptor)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   // Admin only
   @Roles('ADMIN')
-  @Get('/profiles')
+  @Get()
   async findAll() {
     return this.userService.findAll();
   }
