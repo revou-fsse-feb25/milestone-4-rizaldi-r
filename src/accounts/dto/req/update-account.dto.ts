@@ -1,8 +1,24 @@
-import { Prisma } from '@prisma/client';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { AccountStatus, Prisma } from '@prisma/client';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class UpdateAccountDto {
+  @IsOptional()
+  @IsString()
+  accountName?: string;
+
+  @IsOptional()
+  @IsEnum(AccountStatus)
+  accountStatus?: AccountStatus;
+}
+
+export class UpdateAccountBalanceDto {
   @IsNotEmpty()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   balance: Prisma.Decimal;
 }
