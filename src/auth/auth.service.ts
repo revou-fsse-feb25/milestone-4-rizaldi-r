@@ -5,14 +5,16 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
+
+import { LoginDto } from './dto/login.dto';
+import { ConfigService } from '@nestjs/config';
+import { UserRole } from '@prisma/client';
+import { PayloadDto } from '../_common/res/payload.dto';
 import {
   comparePassword,
   hashPassword,
-} from 'src/_common/utils/password-hashing';
-import { LoginDto } from './dto/login.dto';
-import { PayloadDto } from 'src/_common/res/payload.dto';
-import { ConfigService } from '@nestjs/config';
-import { UserRepository } from 'src/user/user.repository';
+} from '../_common/utils/password-hashing';
+import { UserRepository } from '../user/user.repository';
 
 @Injectable()
 export class AuthService {
@@ -30,11 +32,17 @@ export class AuthService {
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_EXPIRATION', '15m'),
+        expiresIn: this.configService.get<string>(
+          'JWT_EXPIRATION_ACCESS',
+          '15m',
+        ),
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_EXPIRATION', '7d'),
+        expiresIn: this.configService.get<string>(
+          'JWT_EXPIRATION_REFRESH',
+          '7d',
+        ),
       }),
     ]);
 
@@ -71,7 +79,7 @@ export class AuthService {
     const user = await this.userRepository.create({
       ...otherData,
       passwordHash: hashedPassword,
-      userRole: 'CUSTOMER',
+      userRole: UserRole.CUSTOMER,
     });
 
     // generate token

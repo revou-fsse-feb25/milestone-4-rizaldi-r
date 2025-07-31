@@ -1,17 +1,20 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
 } from 'class-validator';
 
 export class LoginDto {
+  @IsOptional()
   @IsString()
   @MinLength(3, { message: 'Username must be at least 3 characters long' })
   @MaxLength(50, { message: 'Username cannot be longer than 50 characters' })
   username?: string;
 
+  @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Please enter a valid email address' })
   @MaxLength(100, { message: 'Email cannot be longer than 100 characters' })
   email: string;

@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -37,5 +38,6 @@ export class RegisterDto {
   lastName: string;
 
   @IsEnum(UserRole, { message: 'Invalid user role' })
+  @IsOptional()
   userRole?: UserRole;
 }
