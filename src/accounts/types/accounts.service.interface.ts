@@ -12,27 +12,31 @@ export interface AccountServiceItf {
   findById(id: number): Promise<Account>;
   findAllWithTransactionsByUserId(
     userId: number,
-  ): Promise<typeAccountWithTransaction[]>;
+  ): Promise<AccountWithTransactionType[]>;
   findAccountWithTransactions(
     id: number,
-  ): Promise<typeAccountWithTransaction | null>;
-  create(userId: number, userInput: UserInputItf): Promise<Account>;
+  ): Promise<AccountWithTransactionType | null>;
+  create(userId: number, userInput: CreateParamItf): Promise<Account>;
+  update(accountId: number, userInput: UpdateParamItf): Promise<Account>;
   updateBalance(
     accountId: number,
     newBalance: Prisma.Decimal,
   ): Promise<Account>;
-  // updateStatus(accountId: number, status: typeStatus): Promise<Account>;
   delete(accountId: number): Promise<Account>;
 }
 
-export type typeAccountWithTransaction = Account & {
+export type AccountWithTransactionType = Account & {
   from_transactions: Transaction[];
   to_transactions: Transaction[];
 };
 
-export interface UserInputItf {
+export interface UpdateParamItf {
+  accountName?: string;
+  accountStatus?: AccountStatus;
+}
+
+export interface CreateParamItf {
   accountName: string;
-  balance: number;
   currency: Currency;
   accountStatus?: AccountStatus;
 }
