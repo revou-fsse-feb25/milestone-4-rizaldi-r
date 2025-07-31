@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { CustomNotFoundException } from 'src/_common/exceptions/custom-not-found.exception';
+import { ResourceNotFoundException } from 'src/_common/exceptions/custom-not-found.exception';
 
 /**
  * Catches all exceptions thrown in the application and formats the response.
@@ -23,9 +23,9 @@ export class ExceptionsFilter implements ExceptionFilter {
     let message: string;
     let errorName: string;
 
-    if (exception instanceof CustomNotFoundException) {
-      // Handle CustomNotFoundException
-      status = exception.getStatus();
+    if (exception instanceof ResourceNotFoundException) {
+      // Handle ResourceNotFoundException
+      status = HttpStatus.NOT_FOUND;
       message = exception.message || 'not found.';
       errorName = exception.name;
     } else if (exception instanceof HttpException) {
