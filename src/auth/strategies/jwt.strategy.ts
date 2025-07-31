@@ -27,6 +27,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   // run whenever user get verified
   async validate(payload: PayloadDto) {
+    if (!payload || typeof payload.id !== 'number') {
+      throw new UnauthorizedException(
+        'Invalid token payload: User ID is missing or malformed.',
+      );
+    }
     const user = await this.userRepository.findById(payload.id);
     if (!user) throw new UnauthorizedException('User not found');
 
