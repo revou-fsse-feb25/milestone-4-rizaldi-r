@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+// import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 import {
   createParam,
@@ -15,11 +16,20 @@ export class UserRepository implements UserRepositoryItf {
     return await this.prisma.user.findMany();
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: number): Promise<User | null> {
+    // if (id === undefined || id === null) {
+    //   throw new BadRequestException('User ID cannot be undefined or null.');
+    // }
     const foundUser = await this.prisma.user.findUnique({
       where: { id },
     });
-    if (!foundUser) throw new NotFoundException(`User with ID ${id} not found`);
+    return foundUser;
+  }
+
+  async findByUsername(username: string): Promise<User | null> {
+    const foundUser = await this.prisma.user.findUnique({
+      where: { username },
+    });
     return foundUser;
   }
 
@@ -27,19 +37,16 @@ export class UserRepository implements UserRepositoryItf {
     const foundUser = await this.prisma.user.findUnique({
       where: { email },
     });
-    // if (!foundUser)
-    //   throw new NotFoundException(`User with Email ${email} not found`);
     return foundUser;
   }
 
-  // TODO: update interface
   async create(createData: createParam): Promise<User> {
     return await this.prisma.user.create({
       data: createData,
     });
   }
 
-  async update(id: number, userInput: updateParam): Promise<User> {
+  async update(id: number, userInput: updateParam): Promise<User | null> {
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: {
