@@ -1,11 +1,11 @@
 import { User, UserRole } from '@prisma/client';
 
 export interface UserRepositoryItf {
-  findAll(): Promise<User[]>;
-  findById(id: number): Promise<User>;
+  findAll(): Promise<User[] | null>;
+  findById(id: number): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   create(createData: createParam): Promise<User>;
-  update(id: number, userInput: updateParam): Promise<User>;
+  update(id: number, userInput: updateParam): Promise<User | null>;
 }
 
 export interface createParam {
@@ -20,7 +20,7 @@ export interface createParam {
 export interface updateParam {
   username?: string;
   email?: string;
-  password?: string;
+  hashedPassword?: string;
   firstName?: string;
   lastName?: string;
   lastLogin?: Date;
