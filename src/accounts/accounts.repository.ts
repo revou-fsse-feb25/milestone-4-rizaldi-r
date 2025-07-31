@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { AccountNotFoundRepositoryException } from './exceptions/account-not-found.exception.repository';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { Account, AccountStatus, Prisma } from '@prisma/client';
 import {
+  CreateParamItf,
   ItfAccountsRepository,
-  UserInputItf,
+  AccountWithTransactionType,
+  UpdateParamItf,
 } from './types/accounts.repository.interface';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AccountsRepository implements ItfAccountsRepository {
@@ -25,11 +26,10 @@ export class AccountsRepository implements ItfAccountsRepository {
     });
   }
 
-  async findById(id: number): Promise<Account> {
+  async findById(id: number): Promise<Account | null> {
     const foundAccount = await this.prisma.account.findUnique({
       where: { id },
     });
-    if (!foundAccount) throw new AccountNotFoundRepositoryException();
     return foundAccount;
   }
 
@@ -37,13 +37,20 @@ export class AccountsRepository implements ItfAccountsRepository {
     const foundAccount = await this.prisma.account.findUnique({
       where: { accountNumber },
     });
-    // ISSUE: cant throw error bc it used to check if account number is uique by number generator
-    // if (!foundAccount) throw new AccountNotFoundRepositoryException();
     return foundAccount;
   }
 
-  async findAllWithTransactionsByUserId(userId: number) {
-    return this.prisma.account.findMany({
+  async findByAccountName(accountName: string) {
+    const foundAccount = await this.prisma.account.findUnique({
+      where: { accountName },
+    });
+    return foundAccount;
+  }
+
+  async findAllWithTransactionsByUserId(
+    userId: number,
+  ): Promise<AccountWithTransactionType[]> {
+    return await this.prisma.account.findMany({
       where: { userId },
       include: {
         from_transactions: true,
@@ -52,9 +59,8 @@ export class AccountsRepository implements ItfAccountsRepository {
     });
   }
 
-  // TODO: add exception error
   async findAccountWithTransactions(id: number) {
-    return this.prisma.account.findUnique({
+    return await this.prisma.account.findUnique({
       where: { id },
       include: {
         from_transactions: true,
@@ -63,7 +69,7 @@ export class AccountsRepository implements ItfAccountsRepository {
     });
   }
 
-  async create(userId: number, userInput: UserInputItf): Promise<Account> {
+  async create(userId: number, userInput: CreateParamItf): Promise<Account> {
     return await this.prisma.account.create({
       data: {
         ...userInput,
@@ -74,8 +80,25 @@ export class AccountsRepository implements ItfAccountsRepository {
     });
   }
 
-  async updateBalance(id: number, newBalance: Prisma.Decimal) {
-    return this.prisma.account.update({
+  async update(
+    id: number,
+    updateData: UpdateParamItf,
+    prismaTransaction?: Prisma.TransactionClient,
+  ) {
+    const client = prismaTransaction || this.prisma;
+    return await client.account.update({
+      where: { id },
+      data: { ...updateData },
+    });
+  }
+
+  async updateBalance(
+    id: number,
+    newBalance: Prisma.Decimal,
+    prismaTransaction?: Prisma.TransactionClient,
+  ) {
+    const client = prismaTransaction || this.prisma;
+    return await client.account.update({
       where: { id },
       data: { balance: newBalance },
     });
@@ -92,7 +115,6 @@ export class AccountsRepository implements ItfAccountsRepository {
     const oldAccount = await this.prisma.account.delete({
       where: { id },
     });
-    if (!oldAccount) throw new AccountNotFoundRepositoryException();
     return oldAccount;
   }
 }
