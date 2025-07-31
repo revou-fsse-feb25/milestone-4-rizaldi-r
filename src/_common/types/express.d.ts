@@ -1,11 +1,9 @@
-import { Request } from 'express';
+import { PayloadDto } from '../res/payload.dto';
 
-declare module 'express' {
-  interface Request {
-    user?: {
-      userId: number;
-      email: string;
-      userRole: string;
-    };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: PayloadDto;
+    }
   }
 }
