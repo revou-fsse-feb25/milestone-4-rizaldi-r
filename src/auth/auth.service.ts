@@ -25,7 +25,7 @@ export class AuthService {
   ) {}
 
   check() {
-    return { message: 'Hello API' };
+    return { message: 'Access granted' };
   }
 
   private async generateToken(payload: PayloadDto) {
