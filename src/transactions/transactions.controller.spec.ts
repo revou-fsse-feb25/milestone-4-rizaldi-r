@@ -6,7 +6,7 @@ import { RolesGuard } from 'src/auth/guards/role.guard';
 import { ResourceOwnershipGuard } from 'src/_common/guards/resource-owner.guard';
 import { TransactionAccessGuard } from './guards/transaction-account-access.guard';
 import { AccountsService } from 'src/accounts/accounts.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateTransactionDto } from './dto/req/create-transaction.dto';
 import {
   User,
   TransactionType,

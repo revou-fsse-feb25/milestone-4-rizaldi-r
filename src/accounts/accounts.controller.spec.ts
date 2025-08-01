@@ -4,7 +4,7 @@ import { AccountsService } from './accounts.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { ResourceOwnershipGuard } from 'src/_common/guards/resource-owner.guard';
-import { User, Account, UserRole, Prisma } from '@prisma/client';
+import { User, Account, UserRole, Prisma, AccountStatus } from '@prisma/client';
 import { CreateAccountDto } from './dto/req/create-account.dto';
 import {
   UpdateAccountDto,
@@ -177,10 +177,10 @@ describe('AccountsController', () => {
 
   describe('create', () => {
     it('should create a new account', async () => {
-      const createDto: CreateAccountDto = {
+      const createDto: CreateAccountDto & { accountStatus: AccountStatus } = {
         accountName: 'New Savings',
         currency: 'AUD',
-        accountStatus: 'ACTIVE',
+        accountStatus: AccountStatus.ACTIVE,
       };
       const createdAccount: Account = {
         id: 200,

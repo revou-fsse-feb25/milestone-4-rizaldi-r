@@ -198,7 +198,7 @@ describe('AuthController (e2e)', () => {
         .expect(HttpStatus.OK);
       const responseBody = response.body as { message: string };
 
-      expect(responseBody.message).toBe('Hello API');
+      expect(responseBody.message).toBe('Access granted');
     });
 
     it('should return 403 Forbidden for a regular user', async () => {
