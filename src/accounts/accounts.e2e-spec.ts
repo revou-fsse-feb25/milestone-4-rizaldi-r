@@ -14,6 +14,9 @@ import {
 } from '@prisma/client';
 import { hashPassword } from '../_common/utils/password-hashing';
 import { CreateAccountDto } from './dto/req/create-account.dto';
+// import { MockThrottlerGuard } from '../_common/mocks/throttler.mock';
+import { APP_GUARD } from '@nestjs/core';
+import { MockThrottlerGuard } from '../_common/mocks/throttler.mock';
 
 describe('AccountsController (e2e)', () => {
   let app: INestApplication;
@@ -38,6 +41,12 @@ describe('AccountsController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
+      providers: [
+        {
+          provide: APP_GUARD,
+          useClass: MockThrottlerGuard,
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
