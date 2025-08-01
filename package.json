@@ -7,9 +7,15 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "postinstall": "prisma generate",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "migrate": "cross-env NODE_ENV=development dotenv -e .env.development -- npx prisma migrate dev --name",
+    "generate": "cross-env NODE_ENV=development dotenv -e .env.development -- npx prisma generate",
+    "migrate": "cross-env NODE_ENV=development dotenv -e .env.development -- npx prisma migrate dev",
     "seed": "cross-env NODE_ENV=development dotenv -e .env.development -- npx ts-node prisma/seed.ts",
+    "generate:prod": "cross-env NODE_ENV=production dotenv -e .env.production -- npx prisma generate",
+    "migrate:prod": "cross-env NODE_ENV=production dotenv -e .env.production -- npx prisma migrate dev",
+    "migrate:test": "cross-env NODE_ENV=test dotenv -e .env.test -- npx prisma migrate deploy",
+    "seed:test": "cross-env NODE_ENV=test dotenv -e .env.test -- npx ts-node prisma/seed.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -19,9 +25,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand",
-    "migrate:test": "cross-env NODE_ENV=test dotenv -e .env.test -- npx prisma migrate deploy",
-    "seed:test": "cross-env NODE_ENV=test dotenv -e .env.test -- npx ts-node prisma/seed.ts"
+    "test:e2e": "cross-env NODE_ENV=test jest --config ./test/jest-e2e.json --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

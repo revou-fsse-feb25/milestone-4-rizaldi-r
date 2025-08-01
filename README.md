@@ -9,29 +9,25 @@ This repository hosts the robust and scalable backend system for **Revobank**, a
 The Revobank Backend provides a comprehensive set of functionalities to manage user accounts and transactions:
 
 - **User Authentication & Authorization:**
-  - Secure user registration and login.
-  - Role-based access control (RBAC) using `UserRole` enum for enhanced type safety and clarity.
+  - Secure user registration and login using **passport and bcrypt**.
+  - **Role-based access control (RBAC)** using `UserRole` enum for enhanced type safety and clarity.
   - Management of user profiles.
-  - User ownership guards and custom decorators to ensure data access is restricted to the resource owner.
+  - **User ownership** guards and custom decorators to ensure data access is restricted to the resource owner.
 - **Account Management:**
-  - Dedicated `AccountRepository` for abstracting data access and business logic related to accounts.
   - Accurate financial calculations using `Decimal` type for all balance-related operations to prevent floating-point inaccuracies.
 - **Transaction Processing:**
-  - **Deposit Funds:** `POST /transactions/deposit`
-  - **Withdraw Funds:** `POST /transactions/withdraw`
-  - **Transfer Funds:** `POST /transactions/transfer` between accounts.
-  - **List Transactions:** `GET /transactions` to view a user's transaction history.
-  - **View Transaction Details:** `GET /transactions/:id` for specific transaction information.
+  - The Revobank Backend provides a full suite of transaction endpoints to manage user funds. You can **deposit** funds into an account, **withdraw** funds from an account, and **transfer** money between accounts using `POST` requests. 
+  - Additionally, you can retrieve a user's transaction history with `GET /transactions` and view the details of a specific transaction with `GET /transactions/:id`.
 - **Robustness & Security:**
-  - API throttlers to prevent misuse and protect against excessive requests.
-  - Custom exception filters for handling and formatting errors consistently.
+  - API **throttlers** to prevent misuse and protect against excessive requests.
+  - **Custom exception filters** for handling and formatting errors consistently.
 - **Data Persistence:**
   - Reliable data storage powered by **PostgreSQL**.
   - Schema management and database interactions handled seamlessly by **Prisma ORM**.
 - **Code Quality & Maintainability:**
-  - Clean architecture with clear separation of concerns (e.g., Controller, Service, Repository layers).
-  - A response transformer interceptor to ensure successful responses have a consistent format and didn't include password.
-  - Comprehensive test coverage for critical components, including end-to-end (e2e) tests.
+  - Clean architecture with clear separation of concerns (e.g., **Controller, Service, Repository layers**).
+  - A **response transformer interceptor** to ensure successful responses have a consistent format and didn't include password.
+  - Comprehensive test coverage for critical components, including **end-to-end (e2e) tests**.
 
 ## 🌐 API Endpoints
 
@@ -101,7 +97,7 @@ cd revobank-backend
 
 Create a `.env` file in the root of the project based on the `.env.example` file.
 
-```javascript
+```
 # .env
 DATABASE_URL="postgresql://user:password@localhost:5432/revobank_db?schema=public"
 JWT_SECRET="YOUR_SUPER_SECRET_KEY_HERE" # Use a strong, unique key
