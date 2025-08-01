@@ -1,10 +1,25 @@
 # Revobank Backend
 
-## 🚀 Welcome to the Revobank Backend\!
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about">Welcome</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#endpoints">Endpoints</a></li>
+    <li><a href="#techstack">Tech</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#gettingstarted">Getting Started</a></li>
+    <li><a href="#testing">Testing</a></li>
+    <li><a href="#deploy">Deployed App</a></li>
+    <li><a href="#authors">Author</a></li>
+  </ol>
+</details>
+
+## 🚀 Welcome to the Revobank Backend\! <a id="about"></a>
 
 This repository hosts the robust and scalable backend system for **Revobank**, a modern, fictional financial institution dedicated to providing seamless and secure banking services. Built with a focus on reliability and performance, this API powers all core banking operations, including user authentication, account management, and financial transactions.
 
-## ✨ Features
+## ✨ Features <a id="features"></a>
 
 The Revobank Backend provides a comprehensive set of functionalities to manage user accounts and transactions:
 
@@ -14,10 +29,12 @@ The Revobank Backend provides a comprehensive set of functionalities to manage u
   - Management of user profiles.
   - **User ownership** guards and custom decorators to ensure data access is restricted to the resource owner.
 - **Account Management:**
-  - Accurate financial calculations using `Decimal` type for all balance-related operations to prevent floating-point inaccuracies.
+  - It allows for a range of operations including retrieving all accounts (for administrators), getting a specific user's accounts, and fetching a single account by its ID. 
+  - Users can create new accounts, and both administrators and regular users can update an account's details.
+  - Administrators have a specific endpoint to update an account's balance directly, and they can also delete accounts.
 - **Transaction Processing:**
-  - The Revobank Backend provides a full suite of transaction endpoints to manage user funds. You can **deposit** funds into an account, **withdraw** funds from an account, and **transfer** money between accounts using `POST` requests. 
-  - Additionally, you can retrieve a user's transaction history with `GET /transactions` and view the details of a specific transaction with `GET /transactions/:id`.
+  - The Revobank Backend provides a full suite of transaction endpoints to manage user funds. User can **deposit** funds into an account, **withdraw** funds from an account, and **transfer** money between accounts using `POST` requests. 
+  - User can retrieve a user's transaction history with `GET /transactions` and view the details of a specific transaction with `GET /transactions/:id`.
 - **Robustness & Security:**
   - API **throttlers** to prevent misuse and protect against excessive requests.
   - **Custom exception filters** for handling and formatting errors consistently.
@@ -29,7 +46,9 @@ The Revobank Backend provides a comprehensive set of functionalities to manage u
   - A **response transformer interceptor** to ensure successful responses have a consistent format and didn't include password.
   - Comprehensive test coverage for critical components, including **end-to-end (e2e) tests**.
 
-## 🌐 API Endpoints
+<p align="right">(<a href="#about">back to top</a>)</p>
+
+## 🌐 API Endpoints <a id="endpoints"></a>
 
 - Once the application is running, you can view the interactive API documentation provided by Swagger.
 Open your browser and navigate to:
@@ -66,14 +85,16 @@ This table provides a summary of all available API endpoints for the Revobank Ba
 |  | `/transactions/:id` | `GET` | Get a specific transaction by its ID. |
 |  | `/transactions` | `GET` | Get transactions for the current user. |
 
-## 🛠️ Technologies Used
+<p align="right">(<a href="#about">back to top</a>)</p>
+
+## 🛠️ Technologies Used <a id="techstack"></a>
 
 - **NestJS:** A progressive Node.js framework for building efficient, reliable, and scalable server-side applications.
 - **Prisma:** A next-generation ORM that makes database access easy and type-safe.
 - **PostgreSQL:** A powerful, open-source object-relational database system.
 - **TypeScript:** A superset of JavaScript that adds static types, enhancing code quality and developer experience.
 
-## ⚙️ Prerequisites
+## ⚙️ Prerequisites <a id="prerequisites"></a>
 
 Before you begin, ensure you have the following installed on your system:
 
@@ -81,7 +102,7 @@ Before you begin, ensure you have the following installed on your system:
 - **npm**, **Yarn**, or **pnpm**
 - **PostgreSQL Client** (e.g., `psql` or a GUI tool like DBeaver/PgAdmin)
 
-## 🚀 Getting Started
+## 🚀 Getting Started <a id="gettingstarted"></a>
 
 Follow these steps to get the Revobank Backend up and running on your local machine.
 
@@ -134,6 +155,8 @@ npx prisma generate
 
 If you make changes to your Prisma schema (`prisma/schema.prisma`), remember to run `npx prisma migrate dev` again to update your database.
 
+<p align="right">(<a href="#about">back to top</a>)</p>
+
 ### 5\. Start the Application
 
 ```bash
@@ -147,7 +170,7 @@ pnpm run start:dev
 
 The application will typically run on `http://localhost:3000`.
 
-## 🧪 Testing
+## 🧪 Testing <a id="testing"></a>
 
 To run the unit and integration tests:
 
@@ -171,3 +194,36 @@ yarn test:e2e
 pnpm run test:e2e
 
 ```
+## ⛵ Deployed App <a id="deploy"></a>
+
+The deployed app is available at the following link:
+
+https://milestone-4-rizaldi-r-production.up.railway.app/
+
+Here are some example user data for testing purposes.
+
+**Admin User**
+```bash
+{
+  "username": "scott",
+  "email": "scott@example.com",
+  "password": "pipipopo123",
+  "firstName": "tom",
+  "lastName": "scott"
+}
+```
+**Customer User**
+```bash
+{
+  "username": "jane.doe",
+  "email": "jane.doe@example.com",
+  "password": "password456",
+  "firstName": "Jane",
+  "lastName": "Doe"
+}
+```
+## ✏️️ Author <a id="author"></a>
+
+&emsp; [@rizaldi-r](https://github.com/rizaldi-r)
+
+<p align="right">(<a href="#about">back to top</a>)</p>
